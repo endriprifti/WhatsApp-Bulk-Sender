@@ -27,10 +27,10 @@ This script targets the **WhatsApp Desktop Microsoft Store App (WinUI 3)**. It u
    git clone https://github.com/endriprifti/WhatsApp-Bulk-Sender
 
 ## Configure the script:
-Open Send-WhatsAppBulk.ps1 and adjust the $ExcelFilePath variable at the top to point to your spreadsheet.
+Open `Send-WhatsAppBulk.ps1` and adjust the `$ExcelFilePath` variable at the top to point to your spreadsheet.
 
 Customize your message:
-Edit the $caption variable block in the script to match your desired template and language.
+Edit the `$caption` variable block in the script to match your desired template and language.
 
 Open WhatsApp:
 Open the WhatsApp Desktop app and click on the chat/contact you want to dispatch the sequence to. Leave it open on your screen.
@@ -45,8 +45,8 @@ Open PowerShell (standard, non-administrator) and run:
 ⚠️ Note: Do not touch the mouse or keyboard while the script is actively looping through the Excel rows.
 
 ## 🛠 Troubleshooting
-"WhatsApp window not found":
+`"WhatsApp window not found"`:
 Microsoft Store apps hide their main processes. Ensure WhatsApp is not minimized to the system tray and is visible on your desktop before running.
 
 Script skips files / Pastes text as a separate message:
-This means your PC is taking longer to load the image into WhatsApp. Increase the $WaitBeforePaste variable at the top of the script from 3 to 4 or 5.
+This means your PC is taking longer to load the image into WhatsApp. Increase the `$WaitBeforePaste` variable at the top of the script from 3 to 4 or 5.
