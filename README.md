@@ -24,4 +24,4 @@ This script targets the **WhatsApp Desktop Microsoft Store App (WinUI 3)**. It u
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/YourUsername/WhatsApp-Bulk-Sender.git](https://github.com/YourUsername/WhatsApp-Bulk-Sender.git)
+   git clone https://github.com/endriprifti/WhatsApp-Bulk-Sender
