@@ -1,236 +1,27 @@
-<#
-.SYNOPSIS
-    Automates sending personalized WhatsApp messages with file attachments using data from Excel.
+# WhatsApp Excel Bulk Sender (PowerShell)
 
-.DESCRIPTION
-    This script reads a list of recipients and file paths from an Excel spreadsheet.
-    It targets the Windows Store version of WhatsApp Desktop (WinUI 3) using UI Automation
-    and Win32 API focus management to reliably simulate Drag & Drop / Copy & Paste operations.
-    
-    It bypasses Windows foreground-lock restrictions by injecting a synthetic ALT key event 
-    before enforcing window focus, ensuring the script does not paste sensitive data into the wrong window.
+A hardened PowerShell script to automate sending sequential, personalized WhatsApp messages with image/PDF attachments directly from an Excel spreadsheet. 
 
-.PREREQUISITES
-    - Windows 10 or Windows 11
-    - WhatsApp Desktop (Microsoft Store version)
-    - Microsoft Excel installed locally
-    - An Excel file with 3 columns: Salutation (A), Full Name (B), File Path (C)
+This script targets the **WhatsApp Desktop Microsoft Store App (WinUI 3)**. It uses UI Automation and advanced Win32 API focus-management to solve the common issues associated with simulating keystrokes in UWP/Sandboxed Windows apps.
 
-.NOTES
-    Author: [Your Name/Username]
-    Date: August 2026
-    License: MIT
-    Warning: Use responsibly and comply with WhatsApp's Terms of Service regarding automated messaging.
-#>
+## ✨ Features
+* **Dynamic Excel Parsing:** Pulls Salutations, Full Names, and File Paths directly from an `.xlsx` file.
+* **Smart UI Automation:** Uses `Clipboard::SetFileDropList()` instead of clicking through file explorer dialogs.
+* **Win32 Focus Lock Bypass:** Bypasses Windows' foreground-lock restrictions by injecting synthetic ALT key events, guaranteeing that sensitive texts/files are never pasted into the wrong window.
+* **Full UTF-8 Emoji Support:** Safely handles complex formatting, line breaks, and emojis (🎬, 📅) by routing text through the clipboard rather than simulating individual keystrokes.
+* **Safe Teardown:** Clears the clipboard automatically upon exit or error to ensure privacy.
 
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName UIAutomationClient
+## 📋 Prerequisites
+1. **Windows 10 or 11**
+2. **Microsoft Excel** (installed locally, as it uses the Excel COM object).
+3. **WhatsApp Desktop** (from the Microsoft Store).
+4. An Excel file named `Lista.xlsx` formatted as follows:
+   * **Column A:** Salutation (e.g., *Z.* or *Znj.*)
+   * **Column B:** Full Name
+   * **Column C:** Absolute Path to the attachment (e.g., `C:\MailTest\foto1.jpg`)
 
-# ==============================================================================
-# 1. CONFIGURATION
-# ==============================================================================
-$ExcelFilePath = "C:\MailTest\Lista.xlsx" # Default path (change as needed)
+## 🚀 How to Use
 
-# Delays to accommodate slower PCs or large attachments (in seconds)
-$WaitBeforePaste = 3
-$WaitBeforeNext  = 3
-
-# ==============================================================================
-# 2. WIN32 API DEFINITIONS (Focus Management)
-# ==============================================================================
-if (-not ([System.Management.Automation.PSTypeName]'Win32Focus').Type) {
-    Add-Type @"
-    using System;
-    using System.Runtime.InteropServices;
-    public class Win32Focus {
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        public static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-    }
-"@
-}
-
-# ==============================================================================
-# 3. HELPER FUNCTIONS
-# ==============================================================================
-function Ensure-WhatsAppFocus([IntPtr]$hWnd) {
-    # Send dummy ALT keydown/keyup to unlock Windows foreground privilege
-    [Win32Focus]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)
-    [Win32Focus]::keybd_event(0x12, 0, 0x0002, [UIntPtr]::Zero)
-    
-    [Win32Focus]::SetForegroundWindow($hWnd) | Out-Null
-    Start-Sleep -Milliseconds 300
-    
-    return ([Win32Focus]::GetForegroundWindow() -eq $hWnd)
-}
-
-# ==============================================================================
-# 4. EXCEL DATA EXTRACTION
-# ==============================================================================
-$itemsToSend = @()
-$excel    = $null
-$workbook = $null
-$sheet    = $null
-
-try {
-    Write-Host "Reading data from: $ExcelFilePath..." -ForegroundColor Cyan
-
-    $excel = New-Object -ComObject Excel.Application
-    $excel.Visible = $false
-    $excel.DisplayAlerts = $false
-    $workbook = $excel.Workbooks.Open($ExcelFilePath)
-    $sheet    = $workbook.Sheets.Item(1)
-
-    $lastRow = $sheet.Cells($sheet.Rows.Count, "B").End(-4162).Row
-
-    for ($row = 2; $row -le $lastRow; $row++) {
-        $title    = ([string]$sheet.Cells.Item($row, 1).Value2).Trim()
-        $fullName = ([string]$sheet.Cells.Item($row, 2).Value2).Trim()
-        $filePath = ([string]$sheet.Cells.Item($row, 3).Value2).Trim()
-
-        if ([string]::IsNullOrWhiteSpace($fullName) -or [string]::IsNullOrWhiteSpace($filePath)) {
-            continue
-        }
-
-        # --- DYNAMIC PAYLOAD GENERATION ---
-        # Modify this section to change the message logic and language
-        if ($title -eq "Z." -or $title -eq "Z") {
-            $salutation = "I nderuar Z. $fullName"
-        } elseif ($title -eq "Znj." -or $title -eq "Znj") {
-            $salutation = "E nderuar Znj. $fullName"
-        } else {
-            $salutation = "I/E nderuar $fullName"
-        }
-
-        $caption = @"
-$salutation,
-
-🎬 Pas 13 vitesh, Festivali Kombëtar i Filmit Shqiptar rikthehet me edicionin e 14-të, si festa e madhe e kinemasë shqiptare, në të cilën krijimtaria kinematografike e këtyre viteve prezantohet edhe një herë së bashku për publikun shqiptar.
-
-Ju ftojmë, në emër të Qendrës Kombëtare të Kinematografisë, të na bashkoheni në këtë festë të madhe.
-
-📅 3 shtator 2026, 19:30, Tiranë
-
-🎭 Ceremonia e Hapjes:
- "Salla e madhe e koncerteve – Universiteti i Arteve, Tiranë"
-
-👔 Kodi i veshjes: Ceremonial
-
-📎 Bashkëlidhur ftesa juaj personale.
-
-Mirëutakofshim së shpejti në ditët e bukura të kinemasë shqiptare!
-
-Jonid Jorgji
-Qendra Kombëtare e Kinematografisë
-"@
-
-        $itemsToSend += [PSCustomObject]@{
-            Title    = $title
-            FullName = $fullName
-            FilePath = $filePath
-            Caption  = $caption
-        }
-    }
-}
-finally {
-    # Ensure COM objects are fully released to prevent background Excel processes
-    if ($workbook) { $workbook.Close($false) }
-    if ($excel)    { $excel.Quit() }
-    if ($sheet)    { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($sheet) | Out-Null }
-    if ($workbook) { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($workbook) | Out-Null }
-    if ($excel)    { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null }
-    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
-}
-
-if ($itemsToSend.Count -eq 0) {
-    Write-Warning "No valid rows found in the Excel file."
-    return
-}
-
-# ==============================================================================
-# 5. WHATSAPP UI AUTOMATION
-# ==============================================================================
-# Locate WhatsApp window via UI Automation (Bypasses UWP Process Handle limitations)
-$desktop = [System.Windows.Automation.AutomationElement]::RootElement
-$allWindows = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
-
-$waElement = $null
-foreach ($window in $allWindows) {
-    if ($window.Current.Name -match "WhatsApp") {
-        $waElement = $window
-        break
-    }
-}
-
-if (-not $waElement) {
-    Write-Error "WhatsApp window not found. Please ensure the app is open on your screen."
-    return
-}
-
-$waHwnd = [IntPtr]$waElement.Current.NativeWindowHandle
-$sentCount    = 0
-$skippedCount = 0
-
-try {
-    Write-Host "Starting automation for $($itemsToSend.Count) items..." -ForegroundColor Cyan
-
-    foreach ($item in $itemsToSend) {
-        $filePath = $item.FilePath
-        $caption  = $item.Caption
-        $fullName = $item.FullName
-        $fileName = Split-Path -Path $filePath -Leaf
-
-        if (-not (Test-Path -Path $filePath -PathType Leaf)) {
-            Write-Warning "File not found: '$filePath' for $fullName. Skipping."
-            $skippedCount++
-            continue
-        }
-
-        # Step 1: Stage the file into the Windows Clipboard as a FileDropList
-        $fileList = New-Object System.Collections.Specialized.StringCollection
-        $fileList.Add((Resolve-Path $filePath).Path)
-        [System.Windows.Forms.Clipboard]::SetFileDropList($fileList)
-
-        # Step 2: Ensure WhatsApp is focused before pasting the file
-        if (-not (Ensure-WhatsAppFocus -hWnd $waHwnd)) {
-            Write-Warning "Could not gain focus for: $fullName. Skipping."
-            $skippedCount++
-            continue
-        }
-
-        # Step 3: Trigger file paste (opens WhatsApp's media preview modal)
-        [System.Windows.Forms.SendKeys]::SendWait("^v")
-
-        # Wait for the UI to render the preview and focus the caption box
-        Start-Sleep -Seconds $WaitBeforePaste
-
-        # Step 4: Validate focus, paste text, and dispatch
-        if (Ensure-WhatsAppFocus -hWnd $waHwnd) {
-            [System.Windows.Forms.Clipboard]::SetText($caption)
-            [System.Windows.Forms.SendKeys]::SendWait("^v")
-            Start-Sleep -Milliseconds 500
-            
-            [System.Windows.Forms.SendKeys]::SendWait("~") # Enter key
-            Write-Host "Successfully sent to: $($item.Title) $fullName ($fileName)" -ForegroundColor Green
-            $sentCount++
-        } else {
-            Write-Error "Focus lost during text paste for $fullName! Aborting this message."
-            [System.Windows.Forms.SendKeys]::SendWait("{ESC}") # Attempt to close the dangling preview modal
-            $skippedCount++
-        }
-
-        # Wait for the modal to unmount before looping to the next file
-        Start-Sleep -Seconds $WaitBeforeNext
-    }
-}
-finally {
-    # Step 5: Clear clipboard to prevent sensitive data/files from lingering
-    [System.Windows.Forms.Clipboard]::Clear()
-    Write-Host "`nExecution completed! Sent: $sentCount | Skipped/Errors: $skippedCount" -ForegroundColor Cyan
-}
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/YourUsername/WhatsApp-Bulk-Sender.git](https://github.com/YourUsername/WhatsApp-Bulk-Sender.git)
