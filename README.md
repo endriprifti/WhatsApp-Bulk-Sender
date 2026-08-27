@@ -15,10 +15,10 @@ This script targets the **WhatsApp Desktop Microsoft Store App (WinUI 3)**. It u
 1. **Windows 10 or 11**
 2. **Microsoft Excel** (installed locally, as it uses the Excel COM object).
 3. **WhatsApp Desktop** (from the Microsoft Store).
-4. An Excel file named `Lista.xlsx` formatted as follows:
+4. An Excel file named `List.xlsx` formatted as follows:
    * **Column A:** Salutation (e.g., *Z.* or *Znj.*)
    * **Column B:** Full Name
-   * **Column C:** Absolute Path to the attachment (e.g., `C:\MailTest\foto1.jpg`)
+   * **Column C:** Absolute Path to the attachment (e.g., `C:\Photographs\photo-1.jpg`)
 
 ## 🚀 How to Use
 
