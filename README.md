@@ -38,9 +38,7 @@ Open the WhatsApp Desktop app and click on the chat/contact you want to dispatch
 Run the script:
 Open PowerShell (standard, non-administrator) and run:
 
-## PowerShell
-
-`.\Send-WhatsAppBulk.ps1`
+PowerShell `.\Send-WhatsAppBulk.ps1`
 
 ⚠️ Note: Do not touch the mouse or keyboard while the script is actively looping through the Excel rows.
 
