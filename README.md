@@ -40,7 +40,7 @@ Open PowerShell (standard, non-administrator) and run:
 
 ## PowerShell
 
-.\Send-WhatsAppBulk.ps1
+`.\Send-WhatsAppBulk.ps1`
 
 ⚠️ Note: Do not touch the mouse or keyboard while the script is actively looping through the Excel rows.
 
