@@ -40,7 +40,7 @@ Open PowerShell (standard, non-administrator) and run:
 
 `.\Send-WhatsAppBulk.ps1`
 
-⚠️ Note: Do not touch the mouse or keyboard while the script is actively looping through the Excel rows.
+⚠️ *Note: Do not touch the mouse or keyboard while the script is actively looping through the Excel rows.*
 
 ## 🛠 Troubleshooting
 `"WhatsApp window not found"`:
